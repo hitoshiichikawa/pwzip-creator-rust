@@ -15,7 +15,7 @@ RUN cargo build --release
 # 実行ステージ（Debian slim）
 FROM debian:buster-slim
 WORKDIR /app
-# Cargoプロジェクト名（ここでは zip_webapp ）に合わせてバイナリをコピー
-COPY --from=builder /usr/src/app/target/release/zip_webapp .
+# Cargoプロジェクト名に合わせてバイナリをコピー
+COPY --from=builder /usr/src/app/target/release/pwzip-creator .
 EXPOSE 8080
-CMD ["./zip_webapp"]
+CMD ["./pwzip_creator"]
