@@ -2,23 +2,20 @@
 FROM rust:1.70 as builder
 WORKDIR /usr/src/app
 
-# 静的リンク用にmuslターゲットを追加
-RUN rustup target add x86_64-unknown-linux-musl
-
 # 依存関係キャッシュ用にCargo.tomlとCargo.lockを先にコピー
 COPY Cargo.toml Cargo.lock ./
+# 仮のsrc/main.rsを配置して依存関係を先にビルド（キャッシュ利用のため）
 RUN mkdir src && echo "fn main() {}" > src/main.rs
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --release
 
-# ソースコード全体をコピーし、本番用バイナリをビルド
+# 実際のソースコードをコピーし、リリースビルド
 COPY . .
-RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN cargo build --release
 
-# 実行ステージ：distrolessのstaticイメージを使用
-FROM gcr.io/distroless/static:nonroot
+# 実行ステージ（Debian slim）
+FROM debian:buster-slim
 WORKDIR /app
-# Cargoプロジェクト名（例: zip_webapp）に合わせてバイナリ名を指定
-COPY --from=builder /usr/src/app/target/x86_64-unknown-linux-musl/release/zip_webapp .
+# Cargoプロジェクト名（ここでは zip_webapp ）に合わせてバイナリをコピー
+COPY --from=builder /usr/src/app/target/release/zip_webapp .
 EXPOSE 8080
-USER nonroot:nonroot
-CMD ["/app/zip_webapp"]
+CMD ["./zip_webapp"]
